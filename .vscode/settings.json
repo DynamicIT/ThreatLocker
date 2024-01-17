@@ -1,0 +1,10 @@
+{
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "powershell.codeFormatting.preset": "OTBS",
+    "search.exclude": {
+        "Output": true
+    }
+}
