@@ -4,9 +4,9 @@ function Initialize-ThreatLockerOrgCache {
         $ctx = Get-ThreatLockerContext
     }
     process {
-        $top = Invoke-ThreatLockerApi -Method 'POST' -Endpoint 'Organization/OrganizationGetChildOrganizationsByParameters' -Body @{ pageSize=25; pageNumber=1 }
+        $top = Invoke-ThreatLockerApiPaged -Method 'POST' -Endpoint 'Organization/OrganizationGetChildOrganizationsByParameters' -PageSize 25
         $top = $top | Sort-Object -Descending computerCount
-        $nav = Invoke-ThreatLockerApi -Method 'GET' -Endpoint 'Organization/OrganizationGetListForNav' -Query @{ search=''; pageSize=100; pageNumber=1 }
+        $nav = Invoke-ThreatLockerApiPaged -Method 'GET' -Endpoint 'Organization/OrganizationGetListForNav' -Query @{ search='' }
         $flatNav = $nav | Convert-NestedToFlat -Property 'organizationHierarchyDtos'
         $seen = @{}
         $orgs = $top + $flatNav | ForEach-Object {

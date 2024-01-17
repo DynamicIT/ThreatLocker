@@ -12,7 +12,7 @@
 
         # used to construct a query string. e.g. @{type="device"} would be appended to the URI as ?type=device
         [Hashtable]
-        $Query,
+        $Query = @{},
 
         # body of the request
         [Hashtable]
@@ -46,8 +46,8 @@
             Headers = $headers
             ContentType = "application/json"
         }
-        if ($Body) {
-            $splat.Body = ConvertTo-Json -Compress -InputObject $body
+        if ($Body -and $Body.Count) {
+            $splat['Body'] = ConvertTo-Json -Compress -InputObject $body
         }
         if ($PSCmdlet.ShouldProcess($uri, "$Method $Body")) {
             if ($WebRequest) {

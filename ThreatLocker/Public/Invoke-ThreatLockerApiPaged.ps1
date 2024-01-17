@@ -12,7 +12,7 @@ function Invoke-ThreatLockerApiPaged {
 
         # used to construct a query string. e.g. @{type="device"} would be appended to the URI as ?type=device
         [Hashtable]
-        $Query,
+        $Query = @{},
 
         # body of the request
         [Hashtable]
@@ -30,25 +30,37 @@ function Invoke-ThreatLockerApiPaged {
     )
 
     process {
+        if ($Method -eq 'GET') {
+            $cursor = $Query
+        } else {
+            $cursor = $Body
+        }
+        $cursor.pageSize = $PageSize
+        $cursor.pageNumber = $StartPage
         $splat = @{
             Method = $Method
             Endpoint = $EndPoint
-            Body = $Body
-            OrgId = $OrgId
             WebRequest = $true
         }
-        $Body.pageSize = $PageSize
-        $Body.pageNumber = $StartPage
+        if ($OrgId) {
+            $splat['OrgId'] = $OrgId
+        }
+        if ($Body.Count) {
+            $splat['Body'] = $Body
+        }
+        if ($Query.Count) {
+            $splat['Query'] = $Query
+        }
         $totalPages = $StartPage
-        while ($Body.pageNumber -le $totalPages) {
+        while ($cursor.pageNumber -le $totalPages) {
             if ($totalPages -gt 1) {
-                $percent = $Body.pageNumber / $totalPages * 100
-                Write-Progress -Activity $Endpoint -PercentComplete $percent -CurrentOperation "Page $( $Body.pageNumber )"
+                $percent = $cursor.pageNumber / $totalPages * 100
+                Write-Progress -Activity $Endpoint -PercentComplete $percent -CurrentOperation "Page $( $cursor.pageNumber )"
             }
             $response = Invoke-ThreatLockerApi @splat
             $totalPages = (ConvertFrom-Json -InputObject $response.Headers.Pagination).totalPages
             ConvertFrom-Json -InputObject $response.Content | ForEach-Object { $_ }
-            $Body.pageNumber++
+            $cursor.pageNumber++
         }
     }
 }
