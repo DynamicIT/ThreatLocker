@@ -1,4 +1,4 @@
-function Get-ThreatLockerAppControlPolicyDetail {
+function Get-ThreatLockerACPolicyDetail {
     [CmdletBinding(DefaultParameterSetName="AllComputers")]
     param (
         [Parameter(Mandatory, Position = 0)]

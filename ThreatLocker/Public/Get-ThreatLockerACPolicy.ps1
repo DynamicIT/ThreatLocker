@@ -1,8 +1,9 @@
-function Get-ThreatLockerAppControlPolicy {
+function Get-ThreatLockerACPolicy {
     [CmdletBinding(DefaultParameterSetName="AllComputers")]
     param (
-        [Parameter(Mandatory, Position = 0)]
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
         [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
+        [Alias('OrgId')]
         [String]
         $Org,
 
@@ -14,7 +15,7 @@ function Get-ThreatLockerAppControlPolicy {
         [String]
         $Group,
 
-        [Parameter(Mandatory, ParameterSetName="ComputerPolicy", Position = 1)]
+        [Parameter(Mandatory, ParameterSetName="ComputerPolicy")]
         [ArgumentCompleter({
             $org = $args[4].Org
             (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).Id | FilterArguments $args[2]
@@ -33,8 +34,6 @@ function Get-ThreatLockerAppControlPolicy {
             activeOnly = $true
             filter = ""
             isEnabled = $true
-            #pageNumber = 1
-            #pageSize = 100
             searchText = $Search
             status = 0
             utcOffset = 0

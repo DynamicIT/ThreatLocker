@@ -9,7 +9,7 @@ function Initialize-ThreatLockerOrgCache {
         $nav = Invoke-ThreatLockerApiPaged -Method 'GET' -Endpoint 'Organization/OrganizationGetListForNav' -Query @{ search='' }
         $flatNav = $nav | Convert-NestedToFlat -Property 'organizationHierarchyDtos'
         $seen = @{}
-        $orgs = $top + $flatNav | ForEach-Object {
+        $orgs = @($top) + $flatNav | ForEach-Object {
             if ($_ -and -not $seen.Contains($_.organizationId)) {
                 $seen[$_.organizationId] = $true
                 [PSCustomObject]@{

@@ -8,14 +8,14 @@ function Invoke-ThreatLockerApiPaged {
         [AllowEmptyString()]
         [ValidatePattern('^[a-f0-9-]{36}$')]
         [String]
-        $OrgId,
+        $OrgId = '00000000-0000-0000-0000-000000000000',
 
         # used to construct a query string. e.g. @{type="device"} would be appended to the URI as ?type=device
-        [Hashtable]
+        [Collections.IDictionary]
         $Query = @{},
 
-        # body of the request
-        [Hashtable]
+        # Body of the request. Must be a dictionary/hashtable.
+        [Collections.IDictionary]
         $Body = @{},
 
         [ValidateSet('GET', 'POST', 'PUT')]
