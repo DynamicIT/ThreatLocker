@@ -1,5 +1,5 @@
-function Get-ThreatLockerACPolicyDetail {
-    [CmdletBinding(DefaultParameterSetName="AllComputers")]
+function Get-ThreatLockerACAppFile {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
         [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
@@ -8,19 +8,25 @@ function Get-ThreatLockerACPolicyDetail {
         $Org,
 
         [Parameter(Mandatory, Position = 1, ValueFromPipelineByPropertyName)]
+        [Alias('ApplicationId')]
         [String]
-        $PolicyId
+        $AppId,
+
+        [String]
+        $Search = ""
     )
-    begin {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
-    }
     process {
+        $orgId = (Get-ThreatLockerOrg $Org).Id
+        $query = @{
+            searchText = $Search
+            applicationId = $AppId
+        }
         $splat = @{
             Method = 'GET'
-            Endpoint = 'Policy/PolicyGetById'
-            Query = @{ policyId = $PolicyId }
+            Endpoint = 'ApplicationFile/ApplicationFileGetByApplicationId'
+            Query = $Query
             OrgId = $orgId
         }
-        Invoke-ThreatLockerApi @splat
+        Invoke-ThreatLockerApiPaged @splat
     }
 }

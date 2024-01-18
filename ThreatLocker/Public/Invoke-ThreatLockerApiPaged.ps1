@@ -23,7 +23,7 @@ function Invoke-ThreatLockerApiPaged {
         $Method = 'GET',
 
         [Int]
-        $PageSize = 100,
+        $PageSize = 1000,
 
         [Int]
         $StartPage = 1
