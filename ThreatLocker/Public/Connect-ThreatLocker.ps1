@@ -3,26 +3,32 @@
         .SYNOPSIS
             Sets up the ThreatLockerContext object which will save the connection details for other functions.
         .DESCRIPTION
-            The returned ThreatLocker object will also be stored in the module's ThreatLockerContext variable. This
-            allows it to be used by other functions in this module.
+            The connection context will be stored in the module's ThreatLockerContext variable. This allows it to be
+            used by other functions in this module. It can be retrieved by the user with Get-ThreatLockerContext.
         .EXAMPLE
             Connect-ThreatLocker
 
-            Prompts for access token interactively and uses the default URI.
+            Prompts for access token with instructions to retrieve from a browser.
         .EXAMPLE
             Connect-ThreatLocker -BaseUri "https://betaportalapi.a.threatlocker.com" -AccessToken $secureAccessToken
 
             Connects to a custom URI using saved access token.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="InstanceName")]
     [OutputType([System.Void])]
     param (
-        # REST server base URI.
-        [ValidatePattern('/$')]
-        [Uri]
-        $BaseUri = "https://portalapi.g.threatlocker.com/portalApi/",
+        # ThreatLocker Portal's instance name/letter.
+        [Parameter(ParameterSetName="InstanceName")]
+        [String]
+        $Instance = "g",
 
-        # Leave this blank to prompt interactively
+        # Full portal API URI, including base path. Useful for working with a custom URI like https://betaportalapi.*
+        [Parameter(ParameterSetName="CustomBaseUri")]
+        [Uri]
+        $BaseUri = "https://portalapi.$Instance.threatlocker.com/portalApi/",
+
+        # Authentication token used to access ThreatLocker. When this is left blank, it will prompt interactively
+        # with instructions to extract from the browser. This is the only way to get a token if you're using SSO.
         [Security.SecureString]
         $AccessToken
     )
