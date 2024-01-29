@@ -29,9 +29,9 @@
         $Instance = "g",
 
         # Full portal API URI, including base path. Useful for working with a custom URI like https://betaportalapi.*
-        [Parameter(ParameterSetName="BaseUri-UseBrowser")]
-        [Parameter(ParameterSetName="BaseUri-UsernameAndPassword")]
-        [Parameter(ParameterSetName="BaseUri-AccessToken")]
+        [Parameter(ParameterSetName="BaseUri-UseBrowser", Mandatory)]
+        [Parameter(ParameterSetName="BaseUri-UsernameAndPassword", Mandatory)]
+        [Parameter(ParameterSetName="BaseUri-AccessToken", Mandatory)]
         [Uri]
         $BaseUri = "https://portalapi.$Instance.threatlocker.com/portalApi/",
 
@@ -48,6 +48,12 @@
         [Parameter(ParameterSetName="BaseUri-UsernameAndPassword")]
         [PSCredential]
         $Credential,
+
+        # Inactivity timeout in minutes. Only used when requesting an access token with username & password auth.
+        [Parameter(ParameterSetName="Instance-UsernameAndPassword")]
+        [Parameter(ParameterSetName="BaseUri-UsernameAndPassword")]
+        [Int]
+        $InactivityTimeout = 240,
 
         # Provide a pre-existing auth token to access ThreatLocker. Same as the token retreived with -UseBrowser.
         [Parameter(ParameterSetName="Instance-AccessToken", Mandatory)]
@@ -86,7 +92,7 @@
                 Uri = $ctx.FullUri('AuthToken/AuthTokenInsert')
                 ContentType = "application/json"
                 Body = ConvertTo-Json -Compress -InputObject @{
-                    timeout = 30
+                    timeout = $InactivityTimeout
                     username = $Credential.UserName
                     password = [Convert]::ToBase64String($utf8.GetBytes($Credential.GetNetworkCredential().Password))
                 }
@@ -101,13 +107,15 @@
                 Body = ConvertTo-Json -Compress -InputObject $authTokenInsert
             }
             $authTokenVerifyCode = Invoke-RestMethod @authTokenVerifyCodeSplat
-            $ctx.AccessToken = $authTokenVerifyCode.authTokenId
+            $ctx.AccessToken = ConvertTo-SecureString -AsPlainText -Force $authTokenVerifyCode.authTokenId
+        } else {
+            Write-Error "Unexpected ParameterSet: '$( $PsCmdlet.ParameterSetName )'"
         }
 
         $Script:ThreatLockerContext = $ctx
 
-        if ($ctx.AccessTokenPlain() -notmatch '^[a-f0-9]{64}') {
-            Write-Warning 'Possible issue with access token - not matching expected length.'
+        if ($ctx.AccessTokenPlain() -notmatch '^[a-f0-9]{64}$') {
+            Write-Warning 'Possible issue with access token - not matching expected length or format.'
         }
     }
 }
