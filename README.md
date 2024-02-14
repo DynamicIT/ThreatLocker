@@ -25,6 +25,10 @@ Basic wrapper for ThreatLocker's new Portal API. Most endpoints are unimplemente
 - [ ] ???
 
 ### Storage Control
+- [x] List and search Storage Control Policies
+- [x] List Storage Control Devices
+- [ ] Edit policy settings.
+- [x] Clone an existing policy into another org or group.
 - [ ] ???
 
 ### Network Control
