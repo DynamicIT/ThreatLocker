@@ -49,9 +49,9 @@ function Get-ThreatLockerACApp {
             Hash = "hash"
             Certificate = "cert"
         }
-        $orgId = (Get-ThreatLockerOrg $Org).Id
     }
     process {
+        $orgId = (Get-ThreatLockerOrg $Org).Id
         $body = @{
             searchText = $Search
             searchBy = $searchTypeLookup[$SearchType]

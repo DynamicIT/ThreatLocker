@@ -26,10 +26,8 @@ function Get-ThreatLockerACPolicy {
         [String]
         $Search = ""
     )
-    begin {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
-    }
     process {
+        $orgId = (Get-ThreatLockerOrg $Org).Id
         $body = @{
             activeOnly = $true
             filter = ""

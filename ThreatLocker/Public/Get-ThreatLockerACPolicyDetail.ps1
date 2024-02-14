@@ -11,10 +11,8 @@ function Get-ThreatLockerACPolicyDetail {
         [String]
         $PolicyId
     )
-    begin {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
-    }
     process {
+        $orgId = (Get-ThreatLockerOrg $Org).Id
         $splat = @{
             Method = 'GET'
             Endpoint = 'Policy/PolicyGetById'
