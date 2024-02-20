@@ -14,13 +14,10 @@
         if ($null -eq $Query -or $Query.Keys.Count -eq 0) {
             return $joinedUri
         } else {
-            $queryBuilder = [System.Web.HttpUtility]::ParseQueryString([String]::Empty)
-            foreach ($key in $Query.Keys) {
-                $queryBuilder.Add($key, $Query[$key])
+            $queryComponents = $Query.GetEnumerator() | ForEach-Object {
+                "{0}={1}" -f [System.Uri]::EscapeDataString($_.Key), [System.Uri]::EscapeDataString($_.Value)
             }
-            $uriBuilder = [System.UriBuilder]$joinedUri
-            $uriBuilder.Query = $QueryBuilder.ToString()
-            return $uriBuilder.ToString()
+            return "${joinedUri}?$( $queryComponents -join '&' )"
         }
     }
 }
