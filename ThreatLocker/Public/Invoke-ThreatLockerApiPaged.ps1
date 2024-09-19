@@ -58,7 +58,7 @@ function Invoke-ThreatLockerApiPaged {
                 Write-Progress -Activity $Endpoint -PercentComplete $percent -CurrentOperation "Page $( $cursor.pageNumber )"
             }
             $response = Invoke-ThreatLockerApi @splat
-            $totalPages = (ConvertFrom-Json -InputObject $response.Headers.Pagination).totalPages
+            $totalPages = (ConvertFrom-Json -InputObject ([String]$response.Headers.Pagination)).totalPages
             ConvertFrom-Json -InputObject $response.Content | ForEach-Object { $_ }
             $cursor.pageNumber++
         }

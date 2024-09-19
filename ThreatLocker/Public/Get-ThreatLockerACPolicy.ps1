@@ -39,7 +39,7 @@ function Get-ThreatLockerACPolicy {
         if ($Group) {
             $body['computerGroupId'] = (Get-ThreatLockerGroup -Org $Org -Group $Group).Id
         } elseif ($Computer) {
-            $body['computerGroupId'] = (Get-ThreatLockerComputer -Org $Org -Group $Computer).Id
+            $body['computerGroupId'] = (Get-ThreatLockerComputer -Org $Org -Computer $Computer).Id
         } else {
             Write-Error "Computer or Group need to be specified."
         }

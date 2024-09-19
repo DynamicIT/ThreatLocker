@@ -65,7 +65,7 @@ function Convert-ModuleToSingleFile {
 
         # Paths to recursively import .ps1 files. Relative paths will be evaluated from the manifest's parent folder.
         [String[]]
-        $ImportFrom = @("Classes", "Enums", "Public", "Private")
+        $ImportFrom = @("Classes", "Public", "Private")
     )
     process {
         $moduleContent = [Collections.Generic.List[String]]@()
@@ -115,7 +115,7 @@ function Build-SingleFileModule {
 
         # Paths to recursively import .ps1 files. Relative paths will be evaluated from the manifest's parent folder.
         [String[]]
-        $ImportFrom = @("Classes", "Enums", "Private", "Public"),
+        $ImportFrom = @("Classes", "Private", "Public"),
 
         # If this is not set, all .ps1 files in the Public folder will used as function names (without the extension)
         [String[]]
