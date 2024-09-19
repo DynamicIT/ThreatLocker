@@ -6,6 +6,14 @@
             The connection context will be stored in the module's ThreatLockerContext variable. This allows it to be
             used by other functions in this module. It can be retrieved by the user with Get-ThreatLockerContext.
         .EXAMPLE
+            Connect-ThreatLocker -AccessToken (Read-Host -AsSecureString -Prompt "Token")
+
+            Connects to default instance (g) and prompts for an access token or api key.
+        .EXAMPLE
+            Connect-ThreatLocker -BaseUri "https://betaportalapi.a.threatlocker.com" -AccessToken $secureAccessToken
+
+            Connects to a custom URI using a pre-saved for an access token or api key.
+        .EXAMPLE
             Connect-ThreatLocker -Instance 'a'
 
             Authenticate with username & password + MFA against instance 'a'.
@@ -13,10 +21,6 @@
             Connect-ThreatLocker -UseBrowser
 
             Prompts for with instructions to retrieve an access token from the client's browser. Required for SSO.
-        .EXAMPLE
-            Connect-ThreatLocker -BaseUri "https://betaportalapi.a.threatlocker.com" -AccessToken $secureAccessToken
-
-            Connects to a custom URI using a pre-saved access token (same type provided with -UseBrowser).
     #>
     [CmdletBinding(DefaultParameterSetName="Instance-UsernameAndPassword")]
     [OutputType([System.Void])]
@@ -55,7 +59,9 @@
         [Int]
         $InactivityTimeout = 240,
 
-        # Provide a pre-existing auth token to access ThreatLocker. Same as the token retreived with -UseBrowser.
+        # Provide an auth token to access ThreatLocker. It should be either:
+        #   1. a static API key generated for a ThreatLocker "API User"; or
+        #   2. a short-term access token saved from an interactive user authentication (e.g. same type from -UseBrowser)
         [Parameter(ParameterSetName="Instance-AccessToken", Mandatory)]
         [Parameter(ParameterSetName="BaseUri-AccessToken", Mandatory)]
         [Security.SecureString]
@@ -84,30 +90,34 @@
 
         } elseif ($PSCmdlet.ParameterSetName -like '*-UsernameAndPassword') {
             if (-not $Credential) {
-                $Credential = Get-Credential -Message "ThreatLocker username and password."
+                $Credential = Get-Credential -Message "ThreatLocker account details. Username 'api' for API users."
             }
-            $utf8 = [System.Text.Encoding]::UTF8
-            $authTokenInsertSplat = @{
-                Method = 'POST'
-                Uri = $ctx.FullUri('AuthToken/AuthTokenInsert')
-                ContentType = "application/json"
-                Body = ConvertTo-Json -Compress -InputObject @{
-                    timeout = $InactivityTimeout
-                    username = $Credential.UserName
-                    password = [Convert]::ToBase64String($utf8.GetBytes($Credential.GetNetworkCredential().Password))
+            if ($Credential.UserName -eq 'api') {
+                $ctx.AccessToken = $Credential.Password
+            } else {
+                $utf8 = [System.Text.Encoding]::UTF8
+                $authTokenInsertSplat = @{
+                    Method = 'POST'
+                    Uri = $ctx.FullUri('AuthToken/AuthTokenInsert')
+                    ContentType = "application/json"
+                    Body = ConvertTo-Json -Compress -InputObject @{
+                        timeout = $InactivityTimeout
+                        username = $Credential.UserName
+                        password = [Convert]::ToBase64String($utf8.GetBytes($Credential.GetNetworkCredential().Password))
+                    }
                 }
+                $authTokenInsert = Invoke-RestMethod @authTokenInsertSplat
+                [ValidatePattern('^\d{6}$')]$mfaCode = Read-Host -Prompt 'Provide MFA Code'
+                $authTokenInsert.mfacode = $mfaCode
+                $authTokenVerifyCodeSplat = @{
+                    Method = 'POST'
+                    Uri = $ctx.FullUri('AuthToken/AuthTokenVerifyCode')
+                    ContentType = "application/json"
+                    Body = ConvertTo-Json -Compress -InputObject $authTokenInsert
+                }
+                $authTokenVerifyCode = Invoke-RestMethod @authTokenVerifyCodeSplat
+                $ctx.AccessToken = ConvertTo-SecureString -AsPlainText -Force $authTokenVerifyCode.authTokenId
             }
-            $authTokenInsert = Invoke-RestMethod @authTokenInsertSplat
-            [ValidatePattern('^\d{6}$')]$mfaCode = Read-Host -Prompt 'Provide MFA Code'
-            $authTokenInsert.mfacode = $mfaCode
-            $authTokenVerifyCodeSplat = @{
-                Method = 'POST'
-                Uri = $ctx.FullUri('AuthToken/AuthTokenVerifyCode')
-                ContentType = "application/json"
-                Body = ConvertTo-Json -Compress -InputObject $authTokenInsert
-            }
-            $authTokenVerifyCode = Invoke-RestMethod @authTokenVerifyCodeSplat
-            $ctx.AccessToken = ConvertTo-SecureString -AsPlainText -Force $authTokenVerifyCode.authTokenId
         } else {
             Write-Error "Unexpected ParameterSet: '$( $PsCmdlet.ParameterSetName )'"
         }
