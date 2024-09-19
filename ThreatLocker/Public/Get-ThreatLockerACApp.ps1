@@ -2,8 +2,8 @@ function Get-ThreatLockerACApp {
     [CmdletBinding(DefaultParameterSetName="AllComputers")]
     param (
         [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
-        [Alias('OrgId')]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('OrgId', 'OrgName', 'OrganizationId')]
         [String]
         $Org,
 
@@ -51,7 +51,7 @@ function Get-ThreatLockerACApp {
         }
     }
     process {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
+        $orgId = (Get-ThreatLockerOrg $Org).OrgId
         $body = @{
             searchText = $Search
             searchBy = $searchTypeLookup[$SearchType]

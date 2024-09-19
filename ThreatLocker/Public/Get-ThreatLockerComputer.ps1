@@ -1,17 +1,18 @@
 ﻿function Get-ThreatLockerComputer {
     [CmdletBinding(DefaultParameterSetName="AllComputers")]
     param (
-        [Parameter(Mandatory, Position = 0)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('OrgId', 'OrgName', 'OrganizationId')]
         [String]
         $Org,
 
         [Parameter(Mandatory, ParameterSetName="LookupIdOrName", Position = 1)]
         [ArgumentCompleter({
             $org = $args[4].Org
-            (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).Id | FilterArguments $args[2]
+            (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).ComputerId | FilterArguments $args[2]
         })]
-        [Alias('IdOrName')]
+        [Alias('ComputerId', 'ComputerName')]
         [String]
         $Computer,
 
@@ -20,14 +21,14 @@
     )
     begin {
         $ctx = Get-ThreatLockerContext
-        $orgId = (Get-ThreatLockerOrg $Org).Id
     }
     process {
+        $orgId = (Get-ThreatLockerOrg $Org).OrgId
         if ($RefreshCache -or -not (Test-Cache -Cache $ctx.Cache -Group $orgId, 'Computers')) {
             Initialize-ThreatLockerComputerAndGroupCache -OrgId $orgId
         }
         if ($Computer) {
-            Get-CacheItem -Cache $ctx.Cache -Group $orgId,'Computers' -Property 'Id','Name' -Key $Computer
+            Get-CacheItem -Cache $ctx.Cache -Group $orgId,'Computers' -Property 'ComputerId','Name' -Key $Computer
         } else {
             Get-CacheItem -Cache $ctx.Cache -Group $orgId,'Computers' -All
         }

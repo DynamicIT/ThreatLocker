@@ -2,8 +2,8 @@ function Get-ThreatLockerACPolicyDetail {
     [CmdletBinding(DefaultParameterSetName="AllComputers")]
     param (
         [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
-        [Alias('OrganizationId')]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('OrgId', 'OrgName', 'OrganizationId')]
         [String]
         $Org,
 
@@ -12,7 +12,7 @@ function Get-ThreatLockerACPolicyDetail {
         $PolicyId
     )
     process {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
+        $orgId = (Get-ThreatLockerOrg $Org).OrgId
         $splat = @{
             Method = 'GET'
             Endpoint = 'Policy/PolicyGetById'

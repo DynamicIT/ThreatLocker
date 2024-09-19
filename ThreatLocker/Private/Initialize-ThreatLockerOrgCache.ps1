@@ -14,11 +14,11 @@ function Initialize-ThreatLockerOrgCache {
                 $seen[$_.organizationId] = $true
                 [PSCustomObject]@{
                     Name = $_.name
-                    Id = $_.organizationId
+                    OrgId = $_.organizationId
                     ParentId = $_.parentId
                 }
             }
         }
-        Initialize-CacheGroup -Cache $ctx.Cache -Group 'Organizations' -Property 'Id','Name' -Items $orgs
+        Initialize-CacheGroup -Cache $ctx.Cache -Group 'Organizations' -Property 'OrgId','Name' -Items $orgs
     }
 }

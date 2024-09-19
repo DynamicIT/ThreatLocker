@@ -22,20 +22,22 @@ function Initialize-ThreatLockerComputerAndGroupCache {
         $groups = $response | Where-Object label -in 'Other','Computer Groups' | Select-Object -ExpandProperty items | ForEach-Object {
             [PSCustomObject]@{
                 Name = $_.label
-                Id = $_.value
+                GroupId = $_.value
                 EntityType = $_.entityType
+                OrgId = $OrgId
             }
         }
-        Initialize-CacheGroup -Cache $ctx.Cache -Group $orgId,'Groups' -Property 'Id','Name' -Items $groups
+        Initialize-CacheGroup -Cache $ctx.Cache -Group $orgId,'Groups' -Property 'GroupId','Name' -Items $groups
 
         $computers = $response | Where-Object label -eq 'Computers' | Select-Object -ExpandProperty items | ForEach-Object {
             [PSCustomObject]@{
                 Name = $_.label
-                Id = $_.value
+                ComputerId = $_.value
                 EntityType = $_.entityType
+                OrgId = $OrgId
             }
         }
-        Initialize-CacheGroup -Cache $ctx.Cache -Group $orgId,'Computers' -Property 'Id','Name' -Items $computers
+        Initialize-CacheGroup -Cache $ctx.Cache -Group $orgId,'Computers' -Property 'ComputerId','Name' -Items $computers
 
     }
 }

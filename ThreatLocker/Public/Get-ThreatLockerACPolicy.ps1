@@ -2,24 +2,27 @@ function Get-ThreatLockerACPolicy {
     [CmdletBinding(DefaultParameterSetName="AllComputers")]
     param (
         [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
-        [Alias('OrgId')]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('OrgId', 'OrgName', 'OrganizationId')]
         [String]
         $Org,
 
-        [Parameter(Mandatory, ParameterSetName="GroupPolicy", Position = 1)]
+        [Parameter(Mandatory, ParameterSetName="GroupPolicy", Position = 1, ValueFromPipelineByPropertyName)]
+        [Parameter(ParameterSetName="ComputerPolicy", ValueFromPipelineByPropertyName)]
         [ArgumentCompleter({
             $org = $args[4].Org
-            (Get-ThreatLockerGroup $org).Name + (Get-ThreatLockerGroup $org).Id | FilterArguments $args[2]
+            (Get-ThreatLockerGroup $org).Name + (Get-ThreatLockerGroup $org).GroupId | FilterArguments $args[2]
         })]
+        [Alias('GroupId', 'GroupName', 'ComputerGroupId')]
         [String]
         $Group,
 
-        [Parameter(Mandatory, ParameterSetName="ComputerPolicy")]
+        [Parameter(Mandatory, ParameterSetName="ComputerPolicy", ValueFromPipelineByPropertyName)]
         [ArgumentCompleter({
             $org = $args[4].Org
-            (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).Id | FilterArguments $args[2]
+            (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).ComputerId | FilterArguments $args[2]
         })]
+        [Alias('ComputerId', 'ComputerName')]
         [String]
         $Computer,
 
@@ -27,7 +30,7 @@ function Get-ThreatLockerACPolicy {
         $Search = ""
     )
     process {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
+        $orgId = (Get-ThreatLockerOrg $Org).OrgId
         $body = @{
             activeOnly = $true
             filter = ""
@@ -36,10 +39,10 @@ function Get-ThreatLockerACPolicy {
             status = 0
             utcOffset = 0
         }
-        if ($Group) {
-            $body['computerGroupId'] = (Get-ThreatLockerGroup -Org $Org -Group $Group).Id
-        } elseif ($Computer) {
-            $body['computerGroupId'] = (Get-ThreatLockerComputer -Org $Org -Computer $Computer).Id
+        if ($Computer) {
+            $body['computerGroupId'] = (Get-ThreatLockerComputer -Org $Org -Computer $Computer).ComputerId
+        } elseif ($Group) {
+            $body['computerGroupId'] = (Get-ThreatLockerGroup -Org $Org -Group $Group).GroupId
         } else {
             Write-Error "Computer or Group need to be specified."
         }

@@ -1,9 +1,9 @@
 ﻿function Get-ThreatLockerOrg {
     [CmdletBinding(DefaultParameterSetName="AllRecords")]
     param (
-        [Parameter(Mandatory, ParameterSetName="LookupIdOrName", Position = 1)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
-        [Alias('IdOrName')]
+        [Parameter(Mandatory, ParameterSetName="LookupIdOrName", Position = 1, ValueFromPipelineByPropertyName)]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('OrgId', 'OrgName', 'OrganizationId')]
         [String]
         $Org,
 
@@ -18,7 +18,7 @@
             Initialize-ThreatLockerOrgCache
         }
         if ($Org) {
-            Get-CacheItem -Cache $ctx.Cache -Group 'Organizations' -Property 'Id','Name' -Key $Org
+            Get-CacheItem -Cache $ctx.Cache -Group 'Organizations' -Property 'OrgId','Name' -Key $Org
         } else {
             Get-CacheItem -Cache $ctx.Cache -Group 'Organizations' -All
         }

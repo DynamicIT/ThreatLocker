@@ -1,8 +1,9 @@
 function Copy-ThreatLockerACPolicy {
     [CmdletBinding(DefaultParameterSetName = "SameOrg")]
     param (
-        [Parameter(Mandatory, Position = 0)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('OrgId', 'OrgName', 'OrganizationId')]
         [String]
         $Org,
 
@@ -13,7 +14,7 @@ function Copy-ThreatLockerACPolicy {
         # Target organisation. Defaults to match the source policy. If an org is specified, but no group or computer,
         # the target of the source policy is looked up, and the destination target will be set to a matching group
         # in the destination org. e.g. Org1:Workstations -> Org2:Workstations
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
         [String]
         $NewOrg = $Org,
 
@@ -21,7 +22,7 @@ function Copy-ThreatLockerACPolicy {
         [Parameter(ParameterSetName = "TargetGroup")]
         [ArgumentCompleter({
                 $org = $args[4].NewOrg
-            (Get-ThreatLockerGroup $org).Name + (Get-ThreatLockerGroup $org).Id | FilterArguments $args[2]
+            (Get-ThreatLockerGroup $org).Name + (Get-ThreatLockerGroup $org).GroupId | FilterArguments $args[2]
             })]
         [String]
         $NewGroup,
@@ -30,7 +31,7 @@ function Copy-ThreatLockerACPolicy {
         [Parameter(ParameterSetName = "TargetComputer")]
         [ArgumentCompleter({
                 $org = $args[4].NewOrg
-            (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).Id | FilterArguments $args[2]
+            (Get-ThreatLockerComputer $org).Name + (Get-ThreatLockerComputer $org).ComputerId | FilterArguments $args[2]
             })]
         [String]
         $NewComputer,
@@ -45,20 +46,18 @@ function Copy-ThreatLockerACPolicy {
         [Switch]
         $Enable
     )
-    begin {
-        $orgId = (Get-ThreatLockerOrg $Org).Id
-        $newOrgId = (Get-ThreatLockerOrg $NewOrg).Id
-    }
     process {
+        $orgId = (Get-ThreatLockerOrg $Org).OrgId
+        $newOrgId = (Get-ThreatLockerOrg $NewOrg).OrgId
         $sourcePolicy = Get-ThreatLockerACPolicyDetail -Org $orgId -PolicyId $PolicyId
         if ($NewGroup) {
-            $target = (Get-ThreatLockerGroup -Org $newOrgId -Group $NewGroup).Id
+            $target = (Get-ThreatLockerGroup -Org $newOrgId -Group $NewGroup).GroupId
         } elseif ($NewComputer) {
-            $target = (Get-ThreatLockerComputer -Org $newOrgId -Computer $NewComputer).Id
+            $target = (Get-ThreatLockerComputer -Org $newOrgId -Computer $NewComputer).ComputerId
         } elseif ($orgId -ne $newOrgId) {
             $currentGroupName = (Get-ThreatLockerGroup -Org $orgId -Group $sourcePolicy.computerGroupId).Name
             try {
-                $target = (Get-ThreatLockerGroup -Org $newOrgId -Group $currentGroupName).Id
+                $target = (Get-ThreatLockerGroup -Org $newOrgId -Group $currentGroupName).GroupId
             } catch [Management.Automation.PropertyNotFoundException] {
                 Write-Error -Message "Unable to find group named $currentGroupName on target org." -Exception $_.Exception
             }

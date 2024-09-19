@@ -2,8 +2,8 @@
     [CmdletBinding(DefaultParameterSetName="AllRecords")]
     param (
         [Parameter(Mandatory, Position = 0)]
-        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).Id | FilterArguments $args[2] })]
-        [Alias('IdOrName')]
+        [ArgumentCompleter({ (Get-ThreatLockerOrg).Name + (Get-ThreatLockerOrg).OrgId | FilterArguments $args[2] })]
+        [Alias('ParentOrgId', 'ParentOrgName')]
         [String]
         $ParentOrg,
 
@@ -18,7 +18,7 @@
         $DisplayName = $Name
     )
     begin {
-        $parentOrgId = (Get-ThreatLockerOrg -Org $ParentOrg).Id
+        $parentOrgId = (Get-ThreatLockerOrg -Org $ParentOrg).OrgId
         $template = Invoke-ThreatLockerApi -Method 'GET' -OrgId $parentOrgId -Endpoint 'Organization/OrganizationGetForInsertByParentId'
     }
     process {
