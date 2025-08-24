@@ -36,6 +36,7 @@ function New-ThreatLockerACApp {
             $hash.applicationId = $null
             $hash.applicationName = $null
             $hash.organizationId = $null
+            $hash.updateStatus = 1
             $counter++
             [PSCustomObject]$hash
         }
@@ -52,6 +53,7 @@ function New-ThreatLockerACApp {
             isBuiltIn = $false
             canEditApplication = $true
             canEditKeyFile = $false
+            applicationFiles = $clonedAppFiles
             applicationFileUpdates = $clonedAppFiles
             removeApplicationFileIds = @()
             applicationUpdate = @{
