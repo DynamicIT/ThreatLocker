@@ -27,7 +27,8 @@ function New-ThreatLockerACApp {
             throw "OsType 'All' is not supported when creating an application."
         }
         $counter = -$AppFiles.Count
-        $clonedAppFiles = foreach ($file in $AppFiles) {
+        $clonedAppFiles = [Collections.Generic.List[PSCustomObject]]::new()
+        foreach ($file in $AppFiles) {
             $hash = [Ordered]@{}
             $file.PSObject.Properties | ForEach-Object {
                 $hash[$_.Name] = $_.Value
@@ -38,7 +39,7 @@ function New-ThreatLockerACApp {
             $hash.organizationId = $null
             $hash.updateStatus = 1
             $counter++
-            [PSCustomObject]$hash
+            $clonedAppFiles.Add([PSCustomObject]$hash)
         }
 
         #if (-not $osTypeLookup.Contains($osType)) {
