@@ -7,36 +7,42 @@ function Get-ThreatLockerACApp {
         [String]
         $Org,
 
-        [ValidateSet('All','Windows','Mac')]
+        [Parameter(ParameterSetName="AppId")]
+        [Alias('ApplicationId')]
         [String]
+        $AppId,
+
+        [Parameter(ParameterSetName="Search")]
+        [OsType]
         $OsType = 'Windows',
 
+        [Parameter(ParameterSetName="Search")]
         [ValidateSet('All','Custom','BuiltIn')]
         [String]
         $AppType = 'Custom',
 
+        [Parameter(ParameterSetName="Search")]
         [Switch]
         $IncludeChildOrgs,
 
+        [Parameter(ParameterSetName="Search")]
         [Switch]
         $IncludeHidden,
 
+        [Parameter(ParameterSetName="Search")]
         [Switch]
         $IncludeUnused,
 
+        [Parameter(ParameterSetName="Search")]
         [ValidateSet('AppName','FullPath','ProcessPath', 'Hash', 'Certificate')]
         [String]
         $SearchType = 'AppName',
 
+        [Parameter(ParameterSetName="Search")]
         [String]
         $Search = ""
     )
     begin {
-        $osTypeLookup = @{
-            All = 0
-            Windows = 1
-            Mac = 2
-        }
         $appTypeLookup = @{
             All = 0
             Custom = 1
@@ -52,28 +58,35 @@ function Get-ThreatLockerACApp {
     }
     process {
         $orgId = (Get-ThreatLockerOrg $Org).OrgId
-        $body = @{
-            searchText = $Search
-            searchBy = $searchTypeLookup[$SearchType]
-            orderBy = "name"
-            isAscending = $true
-            includeMaster = $true
-            permittedApplications = [Boolean](-not $IncludeUnused)
-            isBuiltInApplication = $false
-            isHidden = [Boolean]$IncludeHidden
-            isTemporary = $false
-            category = $appTypeLookup[$AppType]
-            osType = $osTypeLookup[$OsType]
-            includeChildOrganizations = [Boolean]$IncludeChildOrgs
-            countries = @()
-            categories = @()
+        if ($AppId) {
+            $query = @{
+                applicationId = $AppId
+            }
+            Invoke-ThreatLockerApi -Endpoint "Application/ApplicationGetById" -Query $query -OrgId $orgId
+        } else {
+            $body = @{
+                searchText = $Search
+                searchBy = $searchTypeLookup[$SearchType]
+                orderBy = "name"
+                isAscending = $true
+                includeMaster = $true
+                permittedApplications = [Boolean](-not $IncludeUnused)
+                isBuiltInApplication = $false
+                isHidden = [Boolean]$IncludeHidden
+                isTemporary = $false
+                category = $appTypeLookup[$AppType]
+                osType = [Int]$OsType
+                includeChildOrganizations = [Boolean]$IncludeChildOrgs
+                countries = @()
+                categories = @()
+            }
+            $splat = @{
+                Method = 'POST'
+                Endpoint = 'Application/ApplicationGetByParameters'
+                Body = $Body
+                OrgId = $orgId
+            }
+            Invoke-ThreatLockerApiPaged @splat
         }
-        $splat = @{
-            Method = 'POST'
-            Endpoint = 'Application/ApplicationGetByParameters'
-            Body = $Body
-            OrgId = $orgId
-        }
-        Invoke-ThreatLockerApiPaged @splat
     }
 }

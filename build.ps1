@@ -4,7 +4,7 @@ Set-StrictMode -Version 2.0
 function Initialize-BuildEnvironment {
     param (
         [IO.DirectoryInfo]
-        $Path = $(if ($PSScriptRoot -eq '') { "." } else { $PSScriptRoot }),
+        $Path = $(if ($PSScriptRoot) { $PSScriptRoot } else { "." }),
 
         [IO.FileInfo]
         $Manifest,
@@ -65,7 +65,7 @@ function Convert-ModuleToSingleFile {
 
         # Paths to recursively import .ps1 files. Relative paths will be evaluated from the manifest's parent folder.
         [String[]]
-        $ImportFrom = @("Classes", "Public", "Private")
+        $ImportFrom = @("Classes", "Enums", "Public", "Private")
     )
     process {
         $moduleContent = [Collections.Generic.List[String]]@()
@@ -79,8 +79,10 @@ function Convert-ModuleToSingleFile {
             if (-not [IO.Path]::IsPathRooted($path)) {
                 $path = Join-Path $Manifest.Directory.FullName $path
             }
-            Get-ChildItem -File -Recurse (Join-Path $path "*.ps1") | Sort-Object FullName | ForEach-Object {
-                $moduleContent.Add((Get-Content -Raw -Path $_))
+            if (Test-Path $path) {
+                Get-ChildItem -File -Recurse (Join-Path $path "*.ps1") | Sort-Object FullName | ForEach-Object {
+                    $moduleContent.Add((Get-Content -Raw -Path $_))
+                }
             }
         }
 
@@ -115,7 +117,7 @@ function Build-SingleFileModule {
 
         # Paths to recursively import .ps1 files. Relative paths will be evaluated from the manifest's parent folder.
         [String[]]
-        $ImportFrom = @("Classes", "Private", "Public"),
+        $ImportFrom = @("Classes", "Enums", "Private", "Public"),
 
         # If this is not set, all .ps1 files in the Public folder will used as function names (without the extension)
         [String[]]
@@ -175,7 +177,7 @@ function Merge-SingleFileModuleWithScript {
         $script= [Collections.Generic.List[String]]@()
         $inParamBlock = $false
         Get-Content -Path $ScriptFile | ForEach-Object {
-            if ($_ -match '^param\s*\(' -and $_ -notmatch '\)') {
+            if (($_ -match '^param\s*\(' -and $_ -notmatch '\)') -or $_ -match '^\[CmdletBinding') {
                 $inParamBlock = $true
                 $paramBlock.Add($_)
             } elseif ($inParamBlock) {
@@ -195,20 +197,62 @@ function Merge-SingleFileModuleWithScript {
     }
 }
 
-$build = Initialize-BuildEnvironment
 
+$baseDir = if ($PSScriptRoot) { $PSScriptRoot } else { "." }
+if (Test-Path (Join-Path $baseDir 'build.psd1')) {
+    $config = Import-PowerShellDataFile -Path (Join-Path $baseDir 'build.psd1')
+} else {
+    # Defaults
+    $config = @{
+        Manifest = $null
+        ImportFrom = @("Classes", "Enums", "Public", "Private")
+        CertificatePath = $null
+        TimestampServer = 'http://timestamp.sectigo.com'
+        MergeWithScripts = @(".\Scripts\*.ps1")
+        RemoveScriptsToProcess = $true
+    }
+}
+
+$build = Initialize-BuildEnvironment -Manifest $config.Manifest
 $buildParams = @{
-    ImportFrom = "Classes", "Private", "Public"
     Manifest = $build.ManifestPath
     OutputDir = $build.OutputDir
     NewVersion = $build.NextVersion
-    RemoveScriptsToProcess = $True
+    RemoveScriptsToProcess = $config.RemoveScriptsToProcess
 }
-$singleFileModule = Build-SingleFileModule @buildParams
-$singleFileScripts = Get-Item "Scripts\$( $build.ModuleName ).*.ps1" | ForEach-Object {
-    Merge-SingleFileModuleWithScript -Module $singleFileModule.ModuleFile -Script $_.FullName
+if ($config.ImportFrom) {
+    $buildParams.ImportFrom = $config.ImportFrom
 }
 
-$cert = (Get-Item 'Cert:\CurrentUser\my\467B7FA02D65798DD1ED99E62535776CA9E86907')
-Set-AuthenticodeSignature -Certificate $cert -TimestampServer 'http://timestamp.sectigo.com' -FilePath $singleFileModule.ModuleFile
-$singleFileScripts | Set-AuthenticodeSignature -Certificate $cert -TimestampServer 'http://timestamp.sectigo.com'
+# Build the module into a single .psm1 file
+$singleFileModule = Build-SingleFileModule @buildParams
+
+# Merge MergeWithScripts files with the module so that they can be used as self-contained scripts.
+if ($config.MergeWithScripts) {
+    # Expand paths using the base directory of the script if they are not absolute paths
+    $expandedPaths = foreach ($path in $config.MergeWithScripts) {
+        if (-not [IO.Path]::IsPathRooted($path)) {
+            $path = Join-Path $baseDir $path
+        }
+        Get-Item $path | Select-Object -ExpandProperty FullName
+    }
+    $singleFileScripts = $expandedPaths | Sort-Object -Unique | ForEach-Object {
+        Merge-SingleFileModuleWithScript -Module $singleFileModule.ModuleFile -Script $_
+    }
+}
+
+if ($config.CertificatePath) {
+    $cert = Get-Item -Path $config.CertificatePath
+    $certParams = @{
+        Certificate = $cert
+        TimestampServer = $config.TimestampServer
+    }
+
+    # Sign the single file module
+    Set-AuthenticodeSignature @certParams -FilePath $singleFileModule.ModuleFile
+
+    # Sign any merged scripts
+    if ($config.MergeWithScripts -and $singleFileScripts) {
+        $singleFileScripts | Set-AuthenticodeSignature @certParams
+    }
+}
