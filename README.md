@@ -5,6 +5,7 @@ Connect to ThreatLocker's new Portal API with PowerShell.
 Basic wrapper for ThreatLocker's new Portal API. Most endpoints are unimplemented, but what's available is already very helpful (e.g. cloning an existing app control policy into another org).
 
 ## Examples
+Get inactive devices for ThreatLocker support to orphan:
 ```powershell
 Connect-ThreatLocker -Instance g
 
@@ -30,6 +31,16 @@ $inactiveComputers | Select-Object computerName, computerId, organization, lastC
 Write-Host "Please send $inactivePath to ThreatLocker support to process."
 ```
 
+Copy an existing application into another organisation:
+```powershell
+Connect-ThreatLocker -UseBrowser
+
+$matchingApps = Get-ThreatLockerACApp -Org 'My Company' -Search 'Example Software' -IncludeUnused
+$matchingApps | ft -auto
+$sourceApp = $matchingApps[0]
+$sourceApp | Copy-ThreatLockerACApp -NewOrg 'Target Company'
+```
+
 ## Roadmap
 
 ### General
@@ -48,6 +59,9 @@ Write-Host "Please send $inactivePath to ThreatLocker support to process."
 - [x] List and search AppControl Policies
 - [x] List and search AppControl Applications
 - [x] Get files for existing applications, with search
+- [x] Create a new application definition
+- [x] Add new files to an existing application.
+- [x] Clone an existing application + files into another org.
 - [ ] Edit ring fencing for existing policies.
 - [ ] Edit other policy settings.
 - [x] Clone an existing policy into another org or group.
